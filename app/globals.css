@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  html {
+    font-family: Montserat, system-ui;
+    overflow-x: hidden;
+  }
+  
+  body {
+    overflow-x: hidden;
+    min-width: 320px; /* Ensure minimum width for very small devices */
+  }
+  
+  a { 
+    font-family: Montserat, system-ui;
+   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: Montserat, system-ui;
+  }
+  
+  p, article {
+    font-family: Montserat, system-ui;
+  }
+
+  h2 {
+    font-size: 2.25rem; /* text-4xl */
+    /* font-weight: 700; font-bold */
+    text-align: center; /* text-center */
+    color: #1a202c; /* text-navy-900 */
+  }
+  
+  /* Improve form input accessibility on mobile */
+  input[type="email"], 
+  input[type="text"] {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  /* Ensure buttons are touch-friendly */
+  button {
+    min-height: 44px; /* iOS accessibility guideline */
+  }
+}
