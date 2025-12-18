@@ -1,0 +1,56 @@
+.profile {
+    float: left;
+    width: 100%;
+    padding: 0 12% 95px;
+  }
+  
+  .pro-img {
+    display: inline-block;
+    vertical-align: top;
+    width: 40%;
+  }
+  
+  .pro-txt {
+    display: inline-block;
+    vertical-align: top;
+    width: 55%;
+  }
+  
+  .pro-txt h5 {
+    font-style: italic;
+    text-align: center;
+    margin: 0 0 17px;
+  }
+  
+  .pro-txt p {
+    color: #1b1b1b;
+    font-size: 17px;
+    text-align: justify;
+    line-height: 24px;
+    font-style: italic;
+  }
+  
+  @media only screen and (max-width: 1024px) {
+    .pro-img {
+      width: 100%;
+      text-align: center;
+    }
+  
+    .pro-img img.img-responsive {
+      display: inline-block;
+    }
+  
+    .pro-txt {
+      width: 100%;
+      margin: 40px 0 0;
+    }
+  
+    .profile {
+      width: 100%;
+      padding: 0 4% 55px;
+    }
+  
+    .pro-txt p {
+      font-size: 18px;
+    }
+  }

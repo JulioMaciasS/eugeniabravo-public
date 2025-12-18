@@ -1,0 +1,14 @@
+.sliderContainer :global(.slick-slide) {
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+.sliderContainer :global(.slick-center) {
+  transform: scale(1.1);
+  opacity: 1;
+  z-index: 10;
+}
+
+.sliderContainer :global(.slick-slide.slick-active) {
+  opacity: 1;
+}

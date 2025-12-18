@@ -1,0 +1,42 @@
+/* Reset styles for elements inside the blog post content wrapper 
+   to mitigate interference from global styles */
+.blog-content-wrapper :is(h1, h2, h3, h4, h5, h6, p, a, ul, ol, li, blockquote, pre, code, table, tr, th, td) {
+  all: revert;
+  /* Optionally, customize the default look */
+  margin: revert;
+  font-family: revert;
+}
+
+/* Your original blog content styling */
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  /* margin: 1.5rem 0; */
+}
+
+/* Updated rule for images with custom border style */
+.blog-content-image {
+  display: block;
+  /* margin: 1.5rem auto; */
+  /* Ensure a border appears if only border-style is defined inline */
+  border-width: medium;
+  border-color: currentColor;
+}
+
+.blog-content blockquote {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1rem;
+  font-style: italic;
+}
+
+.blog-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+}
+
+.blog-content th,
+.blog-content td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+}
