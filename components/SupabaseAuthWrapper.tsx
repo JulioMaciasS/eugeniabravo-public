@@ -12,6 +12,7 @@ export default function SupabaseAuthWrapper({ children }: SupabaseAuthWrapperPro
   const { user, loading, getMFAFactors, session, getAALLevel } = useAuth()
   const router = useRouter()
   const [mfaStatus, setMfaStatus] = useState<'checking' | 'required' | 'verified' | 'none'>('checking')
+  const supabaseConfigured = isSupabaseConfigured()
 
   useEffect(() => {
     const checkMFAStatus = async () => {
@@ -68,6 +69,20 @@ export default function SupabaseAuthWrapper({ children }: SupabaseAuthWrapperPro
       }
     }
   }, [mfaStatus, router])
+
+  if (!supabaseConfigured) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="max-w-md w-full space-y-4 p-8 bg-white rounded-lg shadow-md text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Supabase no configurado</h2>
+          <p className="text-sm text-gray-600">
+            Define <strong>NEXT_PUBLIC_SUPABASE_URL</strong> y <strong>NEXT_PUBLIC_SUPABASE_ANON_KEY</strong> para
+            habilitar el panel de administración.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   // Loading states
   if (loading || mfaStatus === 'checking') {
@@ -156,4 +171,4 @@ export default function SupabaseAuthWrapper({ children }: SupabaseAuthWrapperPro
 // Import statements needed at the top
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { createClient } from '@/app/lib/supabase'
+import { createClient, isSupabaseConfigured } from '@/app/lib/supabase'
