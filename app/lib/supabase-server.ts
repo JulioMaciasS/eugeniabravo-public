@@ -1,9 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { Database } from './supabase'
+import { createClient, Database } from './supabase'
 
 // Server client for use in server components and API routes
 export const createServerComponentClient = async () => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return createClient()
+  }
+
   const cookieStore = await cookies()
   
   return createServerClient<Database>(
