@@ -1,4 +1,5 @@
-import { createClient, Database } from '@/app/lib/supabase'
+import { createClient, Database, isSupabaseConfigured } from '@/app/lib/supabase'
+import { generateCategorySlug, generateSlug } from '@/app/utils/slugUtils'
 
 // Type definitions for our data
 export type Category = Database['public']['Tables']['categories']['Row']
@@ -31,6 +32,281 @@ export type PostWithCategoriesAndAuthor = Post & {
   authors?: Author
 }
 
+const demoImage = '/images/blog/sample-article.svg'
+const demoProfileImage = '/images/portrait-placeholder.svg'
+const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+
+let demoCategories: Category[] = [
+  { id: 'demo-cat-civil', name: 'Derecho Civil', created_at: daysAgo(120) },
+  { id: 'demo-cat-laboral', name: 'Derecho Laboral', created_at: daysAgo(110) },
+  { id: 'demo-cat-familia', name: 'Derecho Familiar', created_at: daysAgo(100) },
+  { id: 'demo-cat-mercantil', name: 'Derecho Mercantil', created_at: daysAgo(90) },
+  { id: 'demo-cat-fiscal', name: 'Derecho Fiscal', created_at: daysAgo(80) },
+]
+
+let demoAuthors: Author[] = [
+  {
+    id: 'demo-author-1',
+    name: 'Laura Gomez',
+    role: 'Abogada Principal',
+    description: 'Especialista en derecho civil y familiar con enfoque en soluciones practicas.',
+    profile_picture_url: demoProfileImage,
+    email: 'laura@eugeniabravodemo.com',
+    created_at: daysAgo(200),
+    updated_at: daysAgo(10),
+  },
+  {
+    id: 'demo-author-2',
+    name: 'Carlos Vega',
+    role: 'Abogado Asociado',
+    description: 'Experiencia en derecho mercantil y contratos para empresas.',
+    profile_picture_url: demoProfileImage,
+    email: 'carlos@eugeniabravodemo.com',
+    created_at: daysAgo(180),
+    updated_at: daysAgo(12),
+  },
+  {
+    id: 'demo-author-3',
+    name: 'Ana Ruiz',
+    role: 'Consultora Legal',
+    description: 'Asesora en derecho laboral y cumplimiento normativo.',
+    profile_picture_url: demoProfileImage,
+    email: 'ana@eugeniabravodemo.com',
+    created_at: daysAgo(160),
+    updated_at: daysAgo(14),
+  },
+]
+
+let demoPosts: PostWithCategories[] = [
+  {
+    id: 'demo-post-1',
+    title: 'Guia basica de contratos civiles',
+    content: '<p>Resumen practico sobre contratos, clausulas esenciales y recomendaciones iniciales.</p>',
+    excerpt: 'Guia rapida para entender contratos civiles y sus clausulas clave.',
+    image: demoImage,
+    author: demoAuthors[0].name,
+    visibility: 'PUBLIC',
+    created_at: daysAgo(2),
+    date: daysAgo(2),
+    slug: generateSlug('Guia basica de contratos civiles'),
+    post_categories: [
+      {
+        post_id: 'demo-post-1',
+        category_id: 'demo-cat-civil',
+        created_at: daysAgo(2),
+        categories: demoCategories[0],
+      },
+    ],
+    author_data: demoAuthors[0],
+  },
+  {
+    id: 'demo-post-2',
+    title: 'Checklist de despido justo',
+    content: '<p>Pasos esenciales para evaluar un despido conforme a la normativa vigente.</p>',
+    excerpt: 'Listado de verificacion para procesos de despido y comunicacion interna.',
+    image: demoImage,
+    author: demoAuthors[2].name,
+    visibility: 'PUBLIC',
+    created_at: daysAgo(6),
+    date: daysAgo(6),
+    slug: generateSlug('Checklist de despido justo'),
+    post_categories: [
+      {
+        post_id: 'demo-post-2',
+        category_id: 'demo-cat-laboral',
+        created_at: daysAgo(6),
+        categories: demoCategories[1],
+      },
+    ],
+    author_data: demoAuthors[2],
+  },
+  {
+    id: 'demo-post-3',
+    title: 'Planificacion patrimonial en 2024',
+    content: '<p>Estrategias para organizar activos y anticipar escenarios fiscales.</p>',
+    excerpt: 'Claves para planificar patrimonio con enfoque fiscal y familiar.',
+    image: demoImage,
+    author: demoAuthors[1].name,
+    visibility: 'PRIVATE',
+    created_at: daysAgo(12),
+    date: daysAgo(12),
+    slug: generateSlug('Planificacion patrimonial en 2024'),
+    post_categories: [
+      {
+        post_id: 'demo-post-3',
+        category_id: 'demo-cat-fiscal',
+        created_at: daysAgo(12),
+        categories: demoCategories[4],
+      },
+    ],
+    author_data: demoAuthors[1],
+  },
+  {
+    id: 'demo-post-4',
+    title: 'Mediacion familiar: primeros pasos',
+    content: '<p>Como iniciar un proceso de mediacion con acuerdos sostenibles.</p>',
+    excerpt: 'Primeros pasos para una mediacion familiar efectiva.',
+    image: demoImage,
+    author: demoAuthors[0].name,
+    visibility: 'PUBLIC',
+    created_at: daysAgo(20),
+    date: daysAgo(20),
+    slug: generateSlug('Mediacion familiar primeros pasos'),
+    post_categories: [
+      {
+        post_id: 'demo-post-4',
+        category_id: 'demo-cat-familia',
+        created_at: daysAgo(20),
+        categories: demoCategories[2],
+      },
+    ],
+    author_data: demoAuthors[0],
+  },
+  {
+    id: 'demo-post-5',
+    title: 'Clausulas clave en contratos mercantiles',
+    content: '<p>Elementos esenciales para contratos de servicios y compraventa.</p>',
+    excerpt: 'Clausulas esenciales para contratos mercantiles modernos.',
+    image: demoImage,
+    author: demoAuthors[1].name,
+    visibility: 'PUBLIC',
+    created_at: daysAgo(35),
+    date: daysAgo(35),
+    slug: generateSlug('Clausulas clave en contratos mercantiles'),
+    post_categories: [
+      {
+        post_id: 'demo-post-5',
+        category_id: 'demo-cat-mercantil',
+        created_at: daysAgo(35),
+        categories: demoCategories[3],
+      },
+    ],
+    author_data: demoAuthors[1],
+  },
+  {
+    id: 'demo-post-6',
+    title: 'Actualizacion de plazos procesales',
+    content: '<p>Resumen de cambios recientes y como afectan a clientes y empresas.</p>',
+    excerpt: 'Cambios recientes en plazos procesales y su impacto.',
+    image: demoImage,
+    author: demoAuthors[2].name,
+    visibility: 'PUBLIC',
+    created_at: daysAgo(60),
+    date: daysAgo(60),
+    slug: generateSlug('Actualizacion de plazos procesales'),
+    post_categories: [],
+    author_data: demoAuthors[2],
+  },
+  {
+    id: 'demo-post-7',
+    title: 'Estrategias para proteger activos',
+    content: '<p>Herramientas para blindaje patrimonial y cumplimiento.</p>',
+    excerpt: 'Estrategias legales para proteger activos con enfoque preventivo.',
+    image: demoImage,
+    author: demoAuthors[1].name,
+    visibility: 'PRIVATE',
+    created_at: daysAgo(90),
+    date: daysAgo(90),
+    slug: generateSlug('Estrategias para proteger activos'),
+    post_categories: [
+      {
+        post_id: 'demo-post-7',
+        category_id: 'demo-cat-fiscal',
+        created_at: daysAgo(90),
+        categories: demoCategories[4],
+      },
+    ],
+    author_data: demoAuthors[1],
+  },
+  {
+    id: 'demo-post-8',
+    title: 'Custodia compartida: criterios recientes',
+    content: '<p>Lineamientos actuales para evaluar la custodia compartida.</p>',
+    excerpt: 'Criterios recientes para la custodia compartida en tribunales.',
+    image: demoImage,
+    author: demoAuthors[0].name,
+    visibility: 'PUBLIC',
+    created_at: daysAgo(120),
+    date: daysAgo(120),
+    slug: generateSlug('Custodia compartida criterios recientes'),
+    post_categories: [
+      {
+        post_id: 'demo-post-8',
+        category_id: 'demo-cat-familia',
+        created_at: daysAgo(120),
+        categories: demoCategories[2],
+      },
+    ],
+    author_data: demoAuthors[0],
+  },
+]
+
+const sortPostsByDate = (posts: PostWithCategories[], sortOrder: 'asc' | 'desc' = 'desc') =>
+  [...posts].sort((a, b) => {
+    const aDate = new Date(a.created_at).getTime()
+    const bDate = new Date(b.created_at).getTime()
+    return sortOrder === 'asc' ? aDate - bDate : bDate - aDate
+  })
+
+const filterPostsByVisibility = (posts: PostWithCategories[], visibility: 'PUBLIC' | 'PRIVATE' | 'ALL') => {
+  if (visibility === 'ALL') return posts
+  return posts.filter(post => post.visibility === visibility)
+}
+
+const filterPostsByCategory = (posts: PostWithCategories[], categoryId: string | null) => {
+  if (!categoryId) return posts
+  if (categoryId === 'uncategorized') {
+    return posts.filter(post => !post.post_categories || post.post_categories.length === 0)
+  }
+  return posts.filter(post =>
+    post.post_categories?.some(pc => pc.category_id === categoryId)
+  )
+}
+
+const filterPostsBySearch = (posts: PostWithCategories[], searchTerm: string) => {
+  if (!searchTerm) return posts
+  const lowerTerm = searchTerm.toLowerCase()
+  return posts.filter(post =>
+    post.title.toLowerCase().includes(lowerTerm) ||
+    (post.excerpt || '').toLowerCase().includes(lowerTerm)
+  )
+}
+
+const paginatePosts = (posts: PostWithCategories[], limit: number, offset: number) => {
+  const totalCount = posts.length
+  const pagedPosts = posts.slice(offset, offset + limit)
+  return {
+    posts: pagedPosts,
+    totalCount,
+    hasMore: offset + limit < totalCount,
+  }
+}
+
+const updateDemoCategoryReferences = (categoryId: string, name: string) => {
+  demoPosts = demoPosts.map(post => ({
+    ...post,
+    post_categories: post.post_categories?.map(pc =>
+      pc.category_id === categoryId
+        ? { ...pc, categories: { ...pc.categories, name } }
+        : pc
+    ) || [],
+  }))
+}
+
+const updateDemoAuthorReferences = (authorId: string, updates: Partial<Author>) => {
+  demoPosts = demoPosts.map(post => {
+    if (!post.author_data || post.author_data.id !== authorId) {
+      return post
+    }
+    const nextAuthor = { ...post.author_data, ...updates }
+    return {
+      ...post,
+      author: nextAuthor.name,
+      author_data: nextAuthor,
+    }
+  })
+}
+
 /**
  * Post service that handles all blog post related operations using Supabase
  */
@@ -39,6 +315,9 @@ export class SupabasePostService {
    * Get all categories
    */
   static async fetchCategories() {
+    if (!isSupabaseConfigured()) {
+      return [...demoCategories].sort((a, b) => a.name.localeCompare(b.name))
+    }
     try {
       const supabase = createClient()
       
@@ -66,6 +345,10 @@ export class SupabasePostService {
     visibility: 'PUBLIC' | 'PRIVATE' | 'ALL', 
     selectedCategoryId: string | null = null
   ) {
+    if (!isSupabaseConfigured()) {
+      const filtered = filterPostsByCategory(filterPostsByVisibility(demoPosts, visibility), selectedCategoryId)
+      return sortPostsByDate(filtered)
+    }
     try {
       const supabase = createClient()
       
@@ -131,6 +414,9 @@ export class SupabasePostService {
    * Get posts without category filter (all posts)
    */
   static async fetchAllPosts(visibility: 'PUBLIC' | 'PRIVATE' | 'ALL') {
+    if (!isSupabaseConfigured()) {
+      return sortPostsByDate(filterPostsByVisibility(demoPosts, visibility))
+    }
     try {
       const supabase = createClient()
       
@@ -172,6 +458,9 @@ export class SupabasePostService {
    * Get a single post by ID
    */
   static async fetchPostById(id: string) {
+    if (!isSupabaseConfigured()) {
+      return demoPosts.find(post => post.id === id) || null
+    }
     try {
       const supabase = createClient()
       
@@ -230,6 +519,40 @@ export class SupabasePostService {
     visibility: 'PUBLIC' | 'PRIVATE'
     categoryIds?: string[]
   }) {
+    if (!isSupabaseConfigured()) {
+      const newPostId = `demo-post-${Date.now()}`
+      const categoryIds = postData.categoryIds || []
+      const postCategories = categoryIds
+        .map(categoryId => {
+          const category = demoCategories.find(cat => cat.id === categoryId)
+          if (!category) return null
+          return {
+            post_id: newPostId,
+            category_id: categoryId,
+            created_at: new Date().toISOString(),
+            categories: category,
+          }
+        })
+        .filter(Boolean) as PostWithCategories['post_categories']
+      const createdAt = postData.date || new Date().toISOString()
+      const authorData = demoAuthors.find(author => author.name === postData.author) || demoAuthors[0]
+      const newPost: PostWithCategories = {
+        id: newPostId,
+        title: postData.title,
+        excerpt: postData.excerpt,
+        content: postData.content,
+        image: postData.image || demoImage,
+        author: postData.author || authorData.name,
+        visibility: postData.visibility,
+        created_at: createdAt,
+        date: createdAt,
+        slug: generateSlug(postData.title),
+        post_categories: postCategories || [],
+        author_data: authorData,
+      }
+      demoPosts = [newPost, ...demoPosts]
+      return newPost
+    }
     try {
       const supabase = createClient()
       
@@ -293,6 +616,41 @@ export class SupabasePostService {
       categoryIds?: string[]
     }
   ) {
+    if (!isSupabaseConfigured()) {
+      const postIndex = demoPosts.findIndex(post => post.id === id)
+      if (postIndex === -1) {
+        throw new Error('Post not found')
+      }
+      const existing = demoPosts[postIndex]
+      const updatedCategories = postData.categoryIds
+        ? postData.categoryIds
+            .map(categoryId => {
+              const category = demoCategories.find(cat => cat.id === categoryId)
+              if (!category) return null
+              return {
+                post_id: id,
+                category_id: categoryId,
+                created_at: existing.created_at,
+                categories: category,
+              }
+            })
+            .filter(Boolean) as PostWithCategories['post_categories']
+        : existing.post_categories
+      const updatedPost: PostWithCategories = {
+        ...existing,
+        title: postData.title ?? existing.title,
+        excerpt: postData.excerpt ?? existing.excerpt,
+        content: postData.content ?? existing.content,
+        image: postData.image ?? existing.image,
+        author: postData.author ?? existing.author,
+        visibility: postData.visibility ?? existing.visibility,
+        post_categories: updatedCategories,
+      }
+      const authorData = demoAuthors.find(author => author.name === updatedPost.author) || existing.author_data
+      updatedPost.author_data = authorData
+      demoPosts = demoPosts.map(post => (post.id === id ? updatedPost : post))
+      return updatedPost
+    }
     try {
       const supabase = createClient()
       
@@ -354,6 +712,10 @@ export class SupabasePostService {
    * Delete a post
    */
   static async deletePost(id: string) {
+    if (!isSupabaseConfigured()) {
+      demoPosts = demoPosts.filter(post => post.id !== id)
+      return true
+    }
     try {
       const supabase = createClient()
       
@@ -378,6 +740,15 @@ export class SupabasePostService {
    * Create a new category
    */
   static async createCategory(name: string) {
+    if (!isSupabaseConfigured()) {
+      const newCategory: Category = {
+        id: `demo-cat-${Date.now()}`,
+        name,
+        created_at: new Date().toISOString(),
+      }
+      demoCategories = [...demoCategories, newCategory]
+      return newCategory
+    }
     try {
       const supabase = createClient()
       
@@ -403,6 +774,16 @@ export class SupabasePostService {
    * Update a category
    */
   static async updateCategory(id: string, name: string) {
+    if (!isSupabaseConfigured()) {
+      const category = demoCategories.find(cat => cat.id === id)
+      if (!category) {
+        throw new Error('Category not found')
+      }
+      const updatedCategory = { ...category, name }
+      demoCategories = demoCategories.map(cat => (cat.id === id ? updatedCategory : cat))
+      updateDemoCategoryReferences(id, name)
+      return updatedCategory
+    }
     try {
       const supabase = createClient()
       
@@ -429,6 +810,14 @@ export class SupabasePostService {
    * Delete a category
    */
   static async deleteCategory(id: string) {
+    if (!isSupabaseConfigured()) {
+      demoCategories = demoCategories.filter(cat => cat.id !== id)
+      demoPosts = demoPosts.map(post => ({
+        ...post,
+        post_categories: post.post_categories?.filter(pc => pc.category_id !== id) || [],
+      }))
+      return true
+    }
     try {
       const supabase = createClient()
       
@@ -457,6 +846,10 @@ export class SupabasePostService {
     visibility: 'PUBLIC' | 'PRIVATE' | 'ALL', 
     selectedCategoryId: string | null = null
   ) {
+    if (!isSupabaseConfigured()) {
+      const filtered = filterPostsByCategory(filterPostsByVisibility(demoPosts, visibility), selectedCategoryId)
+      return sortPostsByDate(filtered)
+    }
     try {
       const supabase = createClient()
       
@@ -530,6 +923,9 @@ export class SupabasePostService {
    * Get a single post by slug (for SEO-friendly URLs)
    */
   static async fetchPostBySlug(slug: string): Promise<PostWithCategories | null> {
+    if (!isSupabaseConfigured()) {
+      return demoPosts.find(post => post.slug === slug && post.visibility === 'PUBLIC') || null
+    }
     try {
       const supabase = createClient()
       
@@ -582,6 +978,12 @@ export class SupabasePostService {
     visibility: 'PUBLIC' | 'PRIVATE' | 'ALL',
     categorySlug: string
   ): Promise<PostWithCategories[]> {
+    if (!isSupabaseConfigured()) {
+      const category = demoCategories.find(cat => generateCategorySlug(cat.name) === categorySlug)
+      if (!category) return []
+      const filtered = filterPostsByCategory(filterPostsByVisibility(demoPosts, visibility), category.id)
+      return sortPostsByDate(filtered)
+    }
     try {
       const supabase = createClient()
       
@@ -647,6 +1049,32 @@ export class SupabasePostService {
     currentPostId: string,
     limit: number = 2
   ): Promise<PostWithCategories[]> {
+    if (!isSupabaseConfigured()) {
+      const currentPost = demoPosts.find(post => post.id === currentPostId)
+      const categoryIds = currentPost?.post_categories?.map(pc => pc.category_id) || []
+      let relatedPosts: PostWithCategories[] = []
+      if (categoryIds.length > 0) {
+        relatedPosts = demoPosts.filter(post =>
+          post.id !== currentPostId &&
+          post.post_categories?.some(pc => categoryIds.includes(pc.category_id))
+        )
+      }
+      const sortedRelated = sortPostsByDate(relatedPosts)
+      if (sortedRelated.length >= limit) {
+        return sortedRelated.slice(0, limit)
+      }
+      const needed = limit - sortedRelated.length
+      const latest = sortPostsByDate(
+        demoPosts.filter(post => post.id !== currentPostId && post.visibility === 'PUBLIC')
+      )
+      const combined = [...sortedRelated, ...latest]
+      const seen = new Set<string>()
+      return combined.filter(post => {
+        if (seen.has(post.id)) return false
+        seen.add(post.id)
+        return true
+      }).slice(0, limit)
+    }
     try {
       const supabase = createClient()
       
@@ -747,6 +1175,10 @@ export class SupabasePostService {
     limit: number = 2,
     excludePostId?: string
   ): Promise<PostWithCategories[]> {
+    if (!isSupabaseConfigured()) {
+      const filtered = demoPosts.filter(post => post.visibility === 'PUBLIC' && post.id !== excludePostId)
+      return sortPostsByDate(filtered).slice(0, limit)
+    }
     try {
       const supabase = createClient()
       
@@ -795,6 +1227,11 @@ export class SupabasePostService {
     offset: number = 0,
     sortOrder: 'asc' | 'desc' = 'desc'
   ) {
+    if (!isSupabaseConfigured()) {
+      const filtered = filterPostsByCategory(filterPostsByVisibility(demoPosts, visibility), selectedCategoryId)
+      const sorted = sortPostsByDate(filtered, sortOrder)
+      return paginatePosts(sorted, limit, offset)
+    }
     try {
       const supabase = createClient()
       
@@ -888,6 +1325,14 @@ export class SupabasePostService {
     offset: number = 0,
     sortOrder: 'asc' | 'desc' = 'desc'
   ) {
+    if (!isSupabaseConfigured()) {
+      const filtered = filterPostsBySearch(
+        filterPostsByCategory(filterPostsByVisibility(demoPosts, visibility), selectedCategoryId),
+        searchTerm.trim()
+      )
+      const sorted = sortPostsByDate(filtered, sortOrder)
+      return paginatePosts(sorted, limit, offset)
+    }
     try {
       const supabase = createClient()
       
@@ -1027,6 +1472,11 @@ export class SupabasePostService {
     offset: number = 0,
     sortOrder: 'asc' | 'desc' = 'desc'
   ) {
+    if (!isSupabaseConfigured()) {
+      const filtered = filterPostsByCategory(filterPostsByVisibility(demoPosts, visibility), 'uncategorized')
+      const sorted = sortPostsByDate(filtered, sortOrder)
+      return paginatePosts(sorted, limit, offset)
+    }
     try {
       const supabase = createClient()
       
@@ -1089,6 +1539,9 @@ export class SupabasePostService {
    * Get all authors
    */
   static async fetchAuthors() {
+    if (!isSupabaseConfigured()) {
+      return [...demoAuthors].sort((a, b) => a.name.localeCompare(b.name))
+    }
     try {
       const supabase = createClient()
       
@@ -1113,6 +1566,20 @@ export class SupabasePostService {
    * Create a new author
    */
   static async createAuthor(author: Omit<Author, 'id' | 'created_at' | 'updated_at'>) {
+    if (!isSupabaseConfigured()) {
+      const newAuthor: Author = {
+        id: `demo-author-${Date.now()}`,
+        name: author.name,
+        role: author.role ?? null,
+        description: author.description ?? null,
+        profile_picture_url: author.profile_picture_url ?? demoProfileImage,
+        email: author.email ?? null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      demoAuthors = [...demoAuthors, newAuthor]
+      return newAuthor
+    }
     try {
       const supabase = createClient()
       
@@ -1138,6 +1605,20 @@ export class SupabasePostService {
    * Update an existing author
    */
   static async updateAuthor(id: string, updates: Partial<Omit<Author, 'id' | 'created_at' | 'updated_at'>>) {
+    if (!isSupabaseConfigured()) {
+      const author = demoAuthors.find(item => item.id === id)
+      if (!author) {
+        throw new Error('Author not found')
+      }
+      const updatedAuthor = {
+        ...author,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      }
+      demoAuthors = demoAuthors.map(item => (item.id === id ? updatedAuthor : item))
+      updateDemoAuthorReferences(id, updatedAuthor)
+      return updatedAuthor
+    }
     try {
       const supabase = createClient()
       
@@ -1164,6 +1645,14 @@ export class SupabasePostService {
    * Delete an author
    */
   static async deleteAuthor(id: string) {
+    if (!isSupabaseConfigured()) {
+      demoAuthors = demoAuthors.filter(author => author.id !== id)
+      demoPosts = demoPosts.map(post => {
+        if (!post.author_data || post.author_data.id !== id) return post
+        return { ...post, author_data: undefined }
+      })
+      return true
+    }
     try {
       const supabase = createClient()
       
@@ -1188,6 +1677,9 @@ export class SupabasePostService {
    * Get author by ID
    */
   static async getAuthorById(id: string) {
+    if (!isSupabaseConfigured()) {
+      return demoAuthors.find(author => author.id === id) || null
+    }
     try {
       const supabase = createClient()
       

@@ -7,6 +7,7 @@ import { SupabasePostService, PostWithCategories, Category } from '@/app/service
 import AdminPostCard from './AdminPostCard';
 import BackButton from './components/BackButton';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 
 export default function SupabasePostList() {
   const [posts, setPosts] = useState<PostWithCategories[]>([]);
@@ -22,6 +23,7 @@ export default function SupabasePostList() {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [hasMore, setHasMore] = useState<boolean>(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const demoMode = DEMO_MODE;
 
   const POSTS_PER_PAGE = 18; // Increased from 6 to 18
 
@@ -119,6 +121,10 @@ export default function SupabasePostList() {
 
   // MARK: Delete Post
   const handleDelete = async (id: string) => {
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     if (!window.confirm('¿Estás seguro de que quieres eliminar este post?')) {
       return;
     }

@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/app/lib/supabase';
+import { isSupabaseConfigured } from '@/app/lib/supabase';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 import { useAuth } from '@/app/contexts/AuthContext';
 import PostForm, { Visibility, Category } from '@/interfaces/PostInterface';
 import { useCreatePost } from '../../new/useCreatePost';
-import { Author } from '@/app/services/supabasePostService';
+import { Author, SupabasePostService } from '@/app/services/supabasePostService';
 import { generateExcerpt } from '@/app/utils/excerptUtils';
 
 const initialForm: PostForm = {
@@ -29,7 +30,7 @@ export function useEditPost(postId: string) {
   
   const router = useRouter();
   const { user } = useAuth();
-  const supabase = createClient();
+  const demoImage = '/images/blog/sample-article.svg';
   
   // Import functions from useCreatePost
   const { 
@@ -47,35 +48,13 @@ export function useEditPost(postId: string) {
       try {
         setIsLoading(true);
 
-        // Fetch authors
-        const { data: authorsData, error: authorsError } = await supabase
-          .from('authors')
-          .select('*')
-          .order('name');
-
-        if (authorsError) throw authorsError;
+        const authorsData = await SupabasePostService.fetchAuthors();
         setAuthors(authorsData || []);
 
-        // Fetch post with categories
-        const { data: post, error: postError } = await supabase
-          .from('posts')
-          .select(`
-            *,
-            post_categories (
-              category_id,
-              categories (
-                id,
-                name
-              )
-            )
-          `)
-          .eq('id', postId)
-          .single();
-
-        if (postError) throw postError;
+        const post = await SupabasePostService.fetchPostById(postId);
 
         if (post) {
-          const categoryIds = post.post_categories?.map((pc: any) => pc.category_id) || [];
+          const categoryIds = post.post_categories?.map((pc: any) => pc.category_id || pc.categories?.id).filter(Boolean) || [];
           
           setForm({
             title: post.title || '',
@@ -84,7 +63,7 @@ export function useEditPost(postId: string) {
             content: post.content || '',
             image: post.image || '',
             author: post.author || '',
-            author_id: post.author_id || '',
+            author_id: (post as any).author_id || '',
             visibility: post.visibility as Visibility || Visibility.PUBLIC,
           });
 
@@ -102,7 +81,7 @@ export function useEditPost(postId: string) {
     };
 
     fetchData();
-  }, [postId, supabase, router]);
+  }, [postId, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -128,6 +107,15 @@ export function useEditPost(postId: string) {
     if (!file) return;
 
     try {
+      if (DEMO_MODE) {
+        alert(DEMO_MODE_MESSAGE);
+        return;
+      }
+      if (!isSupabaseConfigured()) {
+        setPreviewImage(demoImage);
+        setForm(prev => ({ ...prev, image: demoImage }));
+        return;
+      }
       // Create preview
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
@@ -143,6 +131,10 @@ export function useEditPost(postId: string) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (DEMO_MODE) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -155,44 +147,15 @@ export function useEditPost(postId: string) {
       // Generate excerpt from content if not provided
       const autoExcerpt = form.excerpt.trim() || generateExcerpt(form.content);
 
-      // Update the post
-      const { error: postError } = await supabase
-        .from('posts')
-        .update({
-          title: form.title,
-          content: form.content,
-          excerpt: autoExcerpt,
-          image: form.image,
-          author: form.author || user?.email || 'Anonymous',
-          author_id: form.author_id || null, // Add author_id
-          visibility: form.visibility,
-        })
-        .eq('id', postId);
-
-      if (postError) throw postError;
-
-      // Update post-category relationships
-      // First, delete existing relationships
-      const { error: deleteError } = await supabase
-        .from('post_categories')
-        .delete()
-        .eq('post_id', postId);
-
-      if (deleteError) throw deleteError;
-
-      // Then, create new relationships
-      if (form.categories.length > 0) {
-        const postCategories = form.categories.map(categoryId => ({
-          post_id: postId,
-          category_id: categoryId,
-        }));
-
-        const { error: categoryError } = await supabase
-          .from('post_categories')
-          .insert(postCategories);
-
-        if (categoryError) throw categoryError;
-      }
+      await SupabasePostService.updatePost(postId, {
+        title: form.title,
+        content: form.content,
+        excerpt: autoExcerpt,
+        image: form.image,
+        author: form.author || user?.email || 'Demo Admin',
+        visibility: form.visibility,
+        categoryIds: form.categories,
+      });
 
       alert('Post updated successfully!');
       router.push('/admin/posts');

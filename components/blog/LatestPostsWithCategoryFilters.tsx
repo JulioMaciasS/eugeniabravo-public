@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Filter, Loader2, Search, Tag } from 'lucide-react';
 import Link from "next/link";
-import { PostWithCategories, Category } from '@/app/services/supabasePostService';
-import { createClient } from '@/app/lib/supabase';
+import { SupabasePostService, PostWithCategories, Category } from '@/app/services/supabasePostService';
 import { debounce } from 'lodash';
 import PostCardComponent from './PostCardComponent';
 
@@ -18,18 +17,11 @@ export default function LatestPostsWithCategoryFilters() {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  const supabase = createClient();
   const POSTS_PER_PAGE = 9;
-  const FEATURED_CATEGORY_ID = '978c2796-10e1-409b-8824-1707d90bc2e0';
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
+      const data = await SupabasePostService.fetchCategories();
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -39,58 +31,30 @@ export default function LatestPostsWithCategoryFilters() {
   const fetchPosts = async (page: number = 1, categoryIds: string[] = [], search: string = '') => {
     setLoading(true);
     try {
-      const from = (page - 1) * POSTS_PER_PAGE;
-      const to = from + POSTS_PER_PAGE - 1;
+      const allPosts = await SupabasePostService.fetchPostsIncludingUncategorized('PUBLIC');
+      const lowerSearch = search.trim().toLowerCase();
+      let filteredPosts = allPosts;
 
-      let query = supabase
-        .from('posts')
-        .select(`
-          *,
-          post_categories (
-            categories (
-              id,
-              name
-            )
-          )
-        `, { count: 'exact' })
-        .eq('visibility', 'PUBLIC')
-        .order('created_at', { ascending: false })
-        .range(from, to);
-
-      // Add search filter
-      if (search) {
-        query = query.ilike('title', `%${search}%`);
+      if (lowerSearch) {
+        filteredPosts = filteredPosts.filter(post =>
+          post.title.toLowerCase().includes(lowerSearch) ||
+          (post.excerpt || '').toLowerCase().includes(lowerSearch)
+        );
       }
 
-      // Add category filter - use a different approach
       if (categoryIds.length > 0) {
-        // First get post IDs that have the selected categories
-        const { data: postCategoryData } = await supabase
-          .from('post_categories')
-          .select('post_id')
-          .in('category_id', categoryIds);
-        
-        const filteredPostIds = postCategoryData?.map(pc => pc.post_id) || [];
-        
-        if (filteredPostIds.length > 0) {
-          query = query.in('id', filteredPostIds);
-        } else {
-          // No posts found with these categories
-          return { posts: [], totalCount: 0, hasMore: false };
-        }
+        filteredPosts = filteredPosts.filter(post =>
+          post.post_categories?.some((pc: PostWithCategories['post_categories'][number]) =>
+            categoryIds.includes(pc.category_id)
+          )
+        );
       }
 
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
-      const postsWithCategories: PostWithCategories[] = (data || []).map(post => ({
-        ...post,
-        categories: post.post_categories?.map((pc: any) => pc.categories).filter(Boolean) || []
-      }));
-
-      setPosts(postsWithCategories);
-      setTotalPosts(count || 0);
+      const totalCount = filteredPosts.length;
+      const from = (page - 1) * POSTS_PER_PAGE;
+      const pagedPosts = filteredPosts.slice(from, from + POSTS_PER_PAGE);
+      setPosts(pagedPosts);
+      setTotalPosts(totalCount);
       setError(null);
     } catch (error) {
       console.error('Error fetching posts:', error);

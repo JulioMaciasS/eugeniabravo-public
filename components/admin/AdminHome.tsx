@@ -1,8 +1,9 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@/app/lib/supabase';
+import { isSupabaseConfigured } from '@/app/lib/supabase';
 import { useAuth } from '@/app/contexts/AuthContext';
+import { SupabasePostService } from '@/app/services/supabasePostService';
 import DashboardCard from './components/DashboardCard';
 import { FileText, FolderOpen, Clock, PlusCircle, User, Calendar, TrendingUp, Users } from 'lucide-react';
 import ActionCard from './components/ActionCard';
@@ -20,6 +21,12 @@ interface DashboardStats {
 
 const AdminHome: React.FC = () => {
   const { user } = useAuth();
+  const demoUser = {
+    email: 'demo@eugeniabravodemo.com',
+    user_metadata: { full_name: 'Demo Admin' },
+    last_sign_in_at: new Date().toISOString(),
+  };
+  const displayUser = user || (!isSupabaseConfigured() ? demoUser : null);
   const [stats, setStats] = useState<DashboardStats>({
     publicPosts: 0,
     privatePosts: 0,
@@ -33,56 +40,25 @@ const AdminHome: React.FC = () => {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const supabase = createClient();
-        
-        // Fetch public posts
-        const { data: publicPosts, error: publicError } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('visibility', 'PUBLIC');
-        
-        if (publicError) throw publicError;
-        
-        // Fetch private posts
-        const { data: privatePosts, error: privateError } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('visibility', 'PRIVATE');
-        
-        if (privateError) throw privateError;
-        
-        // Fetch categories
-        const { data: categories, error: categoriesError } = await supabase
-          .from('categories')
-          .select('id');
-        
-        if (categoriesError) throw categoriesError;
-        
-        // Fetch most recent post
-        const { data: recentPosts, error: recentError } = await supabase
-          .from('posts')
-          .select('created_at')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        if (recentError) throw recentError;
-
-        // Fetch posts from this month
+        const allPosts = await SupabasePostService.fetchPostsIncludingUncategorized('ALL');
+        const categories = await SupabasePostService.fetchCategories();
+        const publicPosts = allPosts.filter(post => post.visibility === 'PUBLIC');
+        const privatePosts = allPosts.filter(post => post.visibility === 'PRIVATE');
+        const mostRecent = allPosts
+          .slice()
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const { data: thisMonthPosts, error: monthError } = await supabase
-          .from('posts')
-          .select('id')
-          .gte('created_at', startOfMonth.toISOString());
-        
-        if (monthError) throw monthError;
+        const thisMonthPosts = allPosts.filter(post =>
+          new Date(post.created_at).getTime() >= startOfMonth.getTime()
+        );
 
         setStats({
-          publicPosts: publicPosts?.length || 0,
-          privatePosts: privatePosts?.length || 0,
-          totalCategories: categories?.length || 0,
-          lastPostDate: recentPosts?.[0]?.created_at || null,
-          thisMonthPosts: thisMonthPosts?.length || 0,
+          publicPosts: publicPosts.length,
+          privatePosts: privatePosts.length,
+          totalCategories: categories.length,
+          lastPostDate: mostRecent?.created_at || null,
+          thisMonthPosts: thisMonthPosts.length,
           isLoading: false,
           error: null
         });
@@ -144,7 +120,7 @@ const AdminHome: React.FC = () => {
           </div>
           
           {/* User Info Card */}
-          {user && (
+          {displayUser && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 min-w-[280px]">
               <div className="flex items-center space-x-3">
                 <div className="bg-[#009483] rounded-full p-2">
@@ -152,11 +128,11 @@ const AdminHome: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-navy-900">
-                    {user.user_metadata?.full_name || 'Administrador'}
+                    {displayUser.user_metadata?.full_name || 'Administrador'}
                   </p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <p className="text-sm text-gray-600">{displayUser.email}</p>
                   <p className="text-xs text-gray-500">
-                    Conectado desde {new Date(user.last_sign_in_at || '').toLocaleDateString()}
+                    Conectado desde {new Date(displayUser.last_sign_in_at || '').toLocaleDateString()}
                   </p>
                 </div>
               </div>

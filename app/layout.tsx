@@ -10,6 +10,10 @@ import ScrollToTop from '@/components/ui/ScrollToTop'
 import ClientAnalytics from './analytics/ClientAnalytics'
 
 const inter = Inter({ subsets: ['latin'] })
+const COOKIE_SCRIPT_ID = process.env.NEXT_PUBLIC_COOKIE_SCRIPT_ID
+const ENABLE_COOKIE_SCRIPT = process.env.NEXT_PUBLIC_ENABLE_COOKIE_SCRIPT === 'true' && Boolean(COOKIE_SCRIPT_ID)
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+const ENABLE_GA = process.env.NEXT_PUBLIC_ENABLE_GA === 'true' && Boolean(GA_MEASUREMENT_ID)
 
 export const metadata = {
   title: 'EugeniaBravoDemo',
@@ -57,20 +61,29 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap" rel="stylesheet" />
-        <script type="text/javascript" charSet="UTF-8" src="//cdn.cookie-script.com/s/9a31abe6fd09491a6bd417ec50666ed4.js"></script>
-        {/* Load GA after hydration */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-5HSRRWN6Q2"
-          strategy="afterInteractive"
-        />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-5HSRRWN6Q2', { page_path: window.location.pathname });
-          `}
-        </Script>
+        {ENABLE_COOKIE_SCRIPT && COOKIE_SCRIPT_ID ? (
+          <Script
+            src={`https://cdn.cookie-script.com/s/${COOKIE_SCRIPT_ID}.js`}
+            strategy="afterInteractive"
+          />
+        ) : null}
+        {ENABLE_GA && GA_MEASUREMENT_ID ? (
+          <>
+            {/* Load GA after hydration */}
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}', { page_path: window.location.pathname });
+              `}
+            </Script>
+          </>
+        ) : null}
       </head>
       <body className={inter.className}>
         <ClientAnalytics />

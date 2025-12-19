@@ -4,6 +4,7 @@ import { PostWithCategories } from '@/app/services/supabasePostService'
 import { Clock, Edit2, Trash2, Eye } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode'
 
 const DEFAULT_IMAGE = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL + 'assets/default-cover.jpg'
 
@@ -151,8 +152,8 @@ function AdminPostCard({ post, onDelete, isDeleting = false }: AdminPostCardProp
             <button
               onClick={handleDelete}
               className="p-2 text-gray-600 hover:text-red-600 transition-colors rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Eliminar"
-              disabled={isDeleting}
+              title={DEMO_MODE ? DEMO_MODE_MESSAGE : 'Eliminar'}
+              disabled={isDeleting || DEMO_MODE}
             >
               <Trash2 className="h-4 w-4" />
             </button>

@@ -21,6 +21,7 @@ import { Category } from '@/interfaces/PostInterface';
 import Link from 'next/link';
 import BackButton from '@/components/admin/components/BackButton';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 
 interface CategoryWithPostCount extends Category {
   postCount: number;
@@ -40,6 +41,7 @@ export default function CategoriesPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editCategoryName, setEditCategoryName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const demoMode = DEMO_MODE;
 
   // Fetch categories with post counts
   const fetchCategories = async () => {
@@ -123,6 +125,10 @@ export default function CategoriesPage() {
       alert('Please enter a category name');
       return;
     }
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -144,6 +150,10 @@ export default function CategoriesPage() {
       alert('Please enter a category name');
       return;
     }
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -163,6 +173,10 @@ export default function CategoriesPage() {
   // Delete category
   const handleDeleteCategory = async () => {
     if (!selectedCategory) return;
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -235,7 +249,9 @@ export default function CategoriesPage() {
           </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="bg-[#009483] text-white px-6 py-3 rounded-lg hover:bg-[#007a6b] transition-colors flex items-center gap-2 mt-4 sm:mt-0"
+            className="bg-[#009483] text-white px-6 py-3 rounded-lg hover:bg-[#007a6b] transition-colors flex items-center gap-2 mt-4 sm:mt-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={demoMode}
+            title={demoMode ? DEMO_MODE_MESSAGE : undefined}
           >
             <PlusCircle className="h-5 w-5" />
             Nueva Categoría
@@ -414,15 +430,17 @@ export default function CategoriesPage() {
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => openEditModal(category)}
-                            className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Editar categoría"
+                            className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={demoMode ? DEMO_MODE_MESSAGE : 'Editar categoría'}
+                            disabled={demoMode}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => openDeleteModal(category)}
-                            className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Eliminar categoría"
+                            className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={demoMode ? DEMO_MODE_MESSAGE : 'Eliminar categoría'}
+                            disabled={demoMode}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -478,7 +496,9 @@ export default function CategoriesPage() {
               <p className="text-gray-500">No hay categorías disponibles</p>
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="mt-4 text-[#009483] hover:text-[#007a6b] font-medium"
+                className="mt-4 text-[#009483] hover:text-[#007a6b] font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={demoMode}
+                title={demoMode ? DEMO_MODE_MESSAGE : undefined}
               >
                 Crear tu primera categoría
               </button>
@@ -523,8 +543,9 @@ export default function CategoriesPage() {
               </button>
               <button
                 onClick={handleCreateCategory}
-                className="px-4 py-2 bg-[#009483] text-white rounded-lg hover:bg-[#007a6b] transition-colors disabled:opacity-50"
-                disabled={isSubmitting}
+                className="px-4 py-2 bg-[#009483] text-white rounded-lg hover:bg-[#007a6b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting || demoMode}
+                title={demoMode ? DEMO_MODE_MESSAGE : undefined}
               >
                 {isSubmitting ? 'Creando...' : 'Crear'}
               </button>
@@ -568,8 +589,9 @@ export default function CategoriesPage() {
               </button>
               <button
                 onClick={handleEditCategory}
-                className="px-4 py-2 bg-[#009483] text-white rounded-lg hover:bg-[#007a6b] transition-colors disabled:opacity-50"
-                disabled={isSubmitting}
+                className="px-4 py-2 bg-[#009483] text-white rounded-lg hover:bg-[#007a6b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting || demoMode}
+                title={demoMode ? DEMO_MODE_MESSAGE : undefined}
               >
                 {isSubmitting ? 'Guardando...' : 'Guardar'}
               </button>
@@ -623,8 +645,9 @@ export default function CategoriesPage() {
               </button>
               <button
                 onClick={handleDeleteCategory}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                disabled={isSubmitting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting || demoMode}
+                title={demoMode ? DEMO_MODE_MESSAGE : undefined}
               >
                 {isSubmitting ? 'Eliminando...' : 'Eliminar'}
               </button>

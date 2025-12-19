@@ -13,6 +13,7 @@ import {
 } from '@/app/lib/storage-helpers';
 import BackButton from './components/BackButton';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 
 interface AuthorFormProps {
   authorId?: string;
@@ -29,6 +30,7 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [originalProfilePicture, setOriginalProfilePicture] = useState<string>('');
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
+  const demoMode = DEMO_MODE;
   const [author, setAuthor] = useState<Partial<Author>>({
     name: '',
     role: '',
@@ -72,6 +74,10 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -92,6 +98,10 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
 
     setUploading(true);
     try {
@@ -122,6 +132,10 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
   };
 
   const handleRemoveImage = async () => {
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     if (author.profile_picture_url && author.profile_picture_url !== originalProfilePicture) {
       try {
         await deleteProfilePictureFromSupabase(author.profile_picture_url);
@@ -148,6 +162,10 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     
     // Check if there's a pending file upload
     if (selectedFile) {
@@ -234,22 +252,24 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
               <button
                 type="button"
                 onClick={() => setUploadMethod('file')}
+                disabled={demoMode}
                 className={`px-4 py-2 rounded-lg border ${
                   uploadMethod === 'file'
                     ? 'bg-[#009483] text-white border-[#009483]'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 Subir Archivo
               </button>
               <button
                 type="button"
                 onClick={() => setUploadMethod('url')}
+                disabled={demoMode}
                 className={`px-4 py-2 rounded-lg border ${
                   uploadMethod === 'url'
                     ? 'bg-[#009483] text-white border-[#009483]'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+                } disabled:opacity-60 disabled:cursor-not-allowed`}
               >
                 URL Externa
               </button>
@@ -284,7 +304,8 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
                       type="file"
                       accept="image/*"
                       onChange={handleFileSelect}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#009483] file:text-white hover:file:bg-[#007a6b]"
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#009483] file:text-white hover:file:bg-[#007a6b] disabled:opacity-60"
+                      disabled={demoMode}
                     />
                     
                     {selectedFile && (
@@ -295,8 +316,8 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
                         <button
                           type="button"
                           onClick={handleFileUpload}
-                          disabled={uploading}
-                          className="bg-[#009483] text-white px-3 py-1 rounded text-sm hover:bg-[#007a6b] disabled:opacity-50"
+                          disabled={uploading || demoMode}
+                          className="bg-[#009483] text-white px-3 py-1 rounded text-sm hover:bg-[#007a6b] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {uploading ? 'Subiendo...' : 'Subir'}
                         </button>
@@ -319,7 +340,8 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="flex items-center space-x-1 text-red-600 hover:text-red-800 text-sm"
+                    className="flex items-center space-x-1 text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={demoMode}
                   >
                     <Trash2 className="h-4 w-4" />
                     <span>Eliminar imagen</span>
@@ -406,8 +428,9 @@ export default function AuthorForm({ authorId, isEditing = false }: AuthorFormPr
             
             <button
               type="submit"
-              disabled={saving || !author.name?.trim() || uploading || !!selectedFile}
+              disabled={saving || !author.name?.trim() || uploading || !!selectedFile || demoMode}
               className="flex-1 bg-[#009483] text-white px-4 py-2 rounded-lg hover:bg-[#007a6b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              title={demoMode ? DEMO_MODE_MESSAGE : undefined}
             >
               {saving ? (
                 <>

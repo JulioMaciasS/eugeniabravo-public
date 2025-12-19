@@ -6,6 +6,7 @@ import { RefreshCw, Search, PlusCircle, Edit2, Trash2, User, Mail, Briefcase } f
 import { SupabasePostService, Author } from '@/app/services/supabasePostService';
 import BackButton from './components/BackButton';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 
 export default function AuthorList() {
   const [authors, setAuthors] = useState<Author[]>([]);
@@ -13,6 +14,7 @@ export default function AuthorList() {
   const [loading, setLoading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [deletingAuthorId, setDeletingAuthorId] = useState<string | null>(null);
+  const demoMode = DEMO_MODE;
 
   // Fetch authors
   const fetchAuthors = async () => {
@@ -55,6 +57,10 @@ export default function AuthorList() {
 
   // Delete author
   const handleDelete = async (id: string) => {
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     if (!window.confirm('¿Estás seguro de que quieres eliminar este autor?')) {
       return;
     }
@@ -204,7 +210,8 @@ export default function AuthorList() {
                   <button
                     onClick={() => handleDelete(author.id)}
                     className="flex-1 bg-red-50 text-red-600 px-3 py-2 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-                    disabled={deletingAuthorId === author.id}
+                    disabled={deletingAuthorId === author.id || demoMode}
+                    title={demoMode ? DEMO_MODE_MESSAGE : undefined}
                   >
                     <Trash2 className="h-3 w-3" />
                     Eliminar

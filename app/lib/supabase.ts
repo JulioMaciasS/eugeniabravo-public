@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { DEMO_MODE } from '@/app/lib/demo-mode'
 
 // Database types - you can generate these with: npx supabase gen types typescript --local
 export interface Database {
@@ -81,7 +82,7 @@ export interface Database {
 }
 
 export const isSupabaseConfigured = () =>
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  Boolean(!DEMO_MODE && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
 type SupabaseClient = ReturnType<typeof createSupabaseClient<Database>>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from './supabase';
+import { createClient, isSupabaseConfigured } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -26,6 +26,9 @@ export const validateImageFile = (file: File): string | null => {
  */
 export const uploadImageToSupabase = async (file: File): Promise<string> => {
   try {
+    if (!isSupabaseConfigured()) {
+      return '/images/blog/sample-article.svg';
+    }
     const supabase = createClient();
     
     // Generate unique filename
@@ -63,6 +66,9 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
  */
 export const deleteImageFromSupabase = async (imageUrl: string): Promise<void> => {
   try {
+    if (!isSupabaseConfigured()) {
+      return;
+    }
     const supabase = createClient();
     
     // Extract file path from URL
@@ -103,6 +109,9 @@ export const revokePreviewUrl = (url: string): void => {
  */
 export const uploadProfilePictureToSupabase = async (file: File): Promise<string> => {
   try {
+    if (!isSupabaseConfigured()) {
+      return '/images/portrait-placeholder.svg';
+    }
     const supabase = createClient();
     
     // Generate unique filename
@@ -140,6 +149,9 @@ export const uploadProfilePictureToSupabase = async (file: File): Promise<string
  */
 export const deleteProfilePictureFromSupabase = async (imageUrl: string): Promise<void> => {
   try {
+    if (!isSupabaseConfigured()) {
+      return;
+    }
     const supabase = createClient();
     
     // Extract file path from URL

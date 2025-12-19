@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/app/lib/supabase';
+import { isSupabaseConfigured } from '@/app/lib/supabase';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 import { useAuth } from '@/app/contexts/AuthContext';
 import PostForm, { Visibility, Category } from '@/interfaces/PostInterface';
 import { uploadImageToSupabase } from '@/app/lib/storage-helpers';
-import { Author } from '@/app/services/supabasePostService';
+import { Author, SupabasePostService } from '@/app/services/supabasePostService';
 import { generateExcerpt } from '@/app/utils/excerptUtils';
 
 export interface UseCreatePostReturn {
@@ -48,37 +49,27 @@ export function useCreatePost(): UseCreatePostReturn {
   
   const router = useRouter();
   const { user } = useAuth();
-  const supabase = createClient();
+  const demoImage = '/images/blog/sample-article.svg';
 
   // Fetch categories on component mount
   const fetchCategories = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
+      const data = await SupabasePostService.fetchCategories();
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  }, [supabase]);
+  }, []);
 
   // Fetch authors on component mount
   const fetchAuthors = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('authors')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
+      const data = await SupabasePostService.fetchAuthors();
       setAuthors(data || []);
     } catch (error) {
       console.error('Error fetching authors:', error);
     }
-  }, [supabase]);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -92,6 +83,8 @@ export function useCreatePost(): UseCreatePostReturn {
     // Set author if user is authenticated
     if (user?.email) {
       setForm(prev => ({ ...prev, author: user.email || '' }));
+    } else if (!isSupabaseConfigured()) {
+      setForm(prev => ({ ...prev, author: 'demo@eugeniabravodemo.com' }));
     }
   }, [fetchData, user]);
 
@@ -119,6 +112,15 @@ export function useCreatePost(): UseCreatePostReturn {
     if (!file) return;
 
     try {
+      if (DEMO_MODE) {
+        alert(DEMO_MODE_MESSAGE);
+        return;
+      }
+      if (!isSupabaseConfigured()) {
+        setPreviewImage(demoImage);
+        setForm(prev => ({ ...prev, image: demoImage }));
+        return;
+      }
       // Create preview
       const previewUrl = URL.createObjectURL(file);
       setPreviewImage(previewUrl);
@@ -134,16 +136,14 @@ export function useCreatePost(): UseCreatePostReturn {
 
   const createNewCategory = async (name: string): Promise<Category | null> => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .insert([{ name }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newCategory = data as Category;
-      setCategories(prev => [...prev, newCategory]);
+      if (DEMO_MODE) {
+        alert(DEMO_MODE_MESSAGE);
+        return null;
+      }
+      const newCategory = await SupabasePostService.createCategory(name);
+      if (newCategory) {
+        setCategories(prev => [...prev, newCategory]);
+      }
       return newCategory;
     } catch (error) {
       console.error('Error creating category:', error);
@@ -153,13 +153,11 @@ export function useCreatePost(): UseCreatePostReturn {
 
   const deleteCategory = async (id: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
+      if (DEMO_MODE) {
+        alert(DEMO_MODE_MESSAGE);
+        return false;
+      }
+      await SupabasePostService.deleteCategory(id);
       setCategories(prev => prev.filter(cat => cat.id !== id));
       return true;
     } catch (error) {
@@ -170,6 +168,10 @@ export function useCreatePost(): UseCreatePostReturn {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (DEMO_MODE) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -182,37 +184,16 @@ export function useCreatePost(): UseCreatePostReturn {
       // Generate excerpt from content if not provided
       const autoExcerpt = form.excerpt.trim() || generateExcerpt(form.content);
 
-      // Create the post
-      const { data: post, error: postError } = await supabase
-        .from('posts')
-        .insert([{
-          title: form.title,
-          content: form.content,
-          excerpt: autoExcerpt,
-          image: form.image,
-          author: form.author || user?.email || 'Anonymous',
-          author_id: form.author_id || null, // Add author_id
-          visibility: form.visibility,
-          date: new Date().toISOString(),
-        }])
-        .select()
-        .single();
-
-      if (postError) throw postError;
-
-      // Create post-category relationships
-      if (form.categories.length > 0) {
-        const postCategories = form.categories.map(categoryId => ({
-          post_id: post.id,
-          category_id: categoryId,
-        }));
-
-        const { error: categoryError } = await supabase
-          .from('post_categories')
-          .insert(postCategories);
-
-        if (categoryError) throw categoryError;
-      }
+      await SupabasePostService.createPost({
+        title: form.title,
+        excerpt: autoExcerpt,
+        content: form.content,
+        image: form.image,
+        author: form.author || user?.email || 'Demo Admin',
+        visibility: form.visibility,
+        categoryIds: form.categories,
+        date: new Date().toISOString(),
+      });
 
       alert('Post created successfully!');
       router.push('/admin/posts');

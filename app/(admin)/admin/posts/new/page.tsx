@@ -21,11 +21,13 @@ import { useRouter } from 'next/navigation';
 import { Category } from '@/interfaces/PostInterface';
 import BackButton from '@/components/admin/components/BackButton';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 
 export default function NewPostPage() {
   const router = useRouter();
   const [openDialog, setOpenDialog] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const demoMode = DEMO_MODE;
 
   const {
     form,
@@ -46,6 +48,10 @@ export default function NewPostPage() {
 
   const handleAddCategory = async () => {
     if (newCategoryName.trim()) {
+      if (demoMode) {
+        alert(DEMO_MODE_MESSAGE);
+        return;
+      }
       const newCategory = await createNewCategory(newCategoryName.trim());
       if (newCategory) {
         setNewCategoryName('');
@@ -56,6 +62,10 @@ export default function NewPostPage() {
 
   const handleDeleteCategory = async (categoryId: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
+      if (demoMode) {
+        alert(DEMO_MODE_MESSAGE);
+        return;
+      }
       await deleteCategory(categoryId);
     }
   };
@@ -110,8 +120,9 @@ export default function NewPostPage() {
           <button
             type="submit"
             form="post-form"
-            disabled={isSubmitting}
+            disabled={isSubmitting || demoMode}
             className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors hover:cursor-pointer"
+            title={demoMode ? DEMO_MODE_MESSAGE : undefined}
           >
             {isSubmitting && <CircularProgress size={16} className="mr-2" color="inherit" />}
             <span>Create Post</span>
@@ -215,6 +226,7 @@ export default function NewPostPage() {
                   size="small"
                   onClick={() => setOpenDialog(true)}
                   color="primary"
+                  disabled={demoMode}
                 >
                   <AddIcon fontSize="small" />
                 </IconButton>
@@ -249,6 +261,7 @@ export default function NewPostPage() {
                           size="small"
                           onClick={() => handleDeleteCategory(option.id)}
                           className="ml-1 text-blue-600 hover:text-red-600"
+                          disabled={demoMode}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -306,11 +319,14 @@ export default function NewPostPage() {
                 onChange={onFileChange}
                 className="hidden"
                 id="image-upload"
+                disabled={demoMode}
               />
               
               <label
                 htmlFor="image-upload"
-                className="mt-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 cursor-pointer transition-colors"
+                className={`mt-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white transition-colors ${
+                  demoMode ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
+                }`}
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -338,7 +354,7 @@ export default function NewPostPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
-          <Button onClick={handleAddCategory} variant="contained">
+          <Button onClick={handleAddCategory} variant="contained" disabled={demoMode}>
             Agregar
           </Button>
         </DialogActions>

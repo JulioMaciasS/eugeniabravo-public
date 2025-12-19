@@ -7,6 +7,7 @@ import { debounce } from 'lodash';
 import { SupabasePostService } from '@/app/services/supabasePostService';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import BackButton from './components/BackButton';
+import { DEMO_MODE, DEMO_MODE_MESSAGE } from '@/app/lib/demo-mode';
 
 export default function PostList() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -18,6 +19,7 @@ export default function PostList() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const demoMode = DEMO_MODE;
 
   const handleVisibilityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setVisibility(e.target.value as 'PUBLIC' | 'PRIVATE' | 'ALL');
@@ -79,6 +81,10 @@ export default function PostList() {
 
   // MARK: Delete Post
   const handleDelete = async (id: string) => {
+    if (demoMode) {
+      alert(DEMO_MODE_MESSAGE);
+      return;
+    }
     if (!window.confirm('¿Estás seguro de que quieres eliminar este artículo?')) {
       return;
     }
@@ -321,7 +327,12 @@ export default function PostList() {
                     <Link href={`/admin/posts/edit/${post.id}`} className="text-blue-600 hover:text-blue-900 mr-4">
                       <Edit2 className="inline h-5 w-5" />
                     </Link>
-                    <button onClick={() => handleDelete(post.id)} className="text-red-600 hover:text-red-900">
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={demoMode}
+                      title={demoMode ? DEMO_MODE_MESSAGE : undefined}
+                    >
                       <Trash2 className="inline h-5 w-5" />
                     </button>
                   </td>
