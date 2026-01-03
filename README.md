@@ -3,8 +3,9 @@
 This repository is a sanitized snapshot of the EugeniaBravoDemo Next.js + Supabase build, shared to showcase implementation details without exposing production credentials.
 
 ## Live References
-- Real website live site: **https://www.eugeniabravodemo.com**
-- Feature walkthrough blog: **[Insert blog post URL here]**
+🔗 Live Demo 🕹️: [https://eugeniabravo-public.vercel.app](https://eugeniabravo-public.vercel.app)  
+🔗 Live Website: [www.eugeniabravo.com](https://www.eugeniabravo.com)  
+🔗 Feature walkthrough blog: **https://portfolio.juliodev.co.uk/projects/eugeniabravo-rebuild**
 
 ## Branches
 - `main`: demo-ready branch intended for hosting and sharing the sanitized build.
